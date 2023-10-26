@@ -24,6 +24,7 @@ function draws(model; n::S, rng = nothing, seed = 1234) where (S<:Integer)
     re_entry = rand(rng, n) .< model.def_costs.reentry  
 
     y_rand = rand(rng, n)
+
     y_ind[1] = searchsortedfirst(y_st_dist_CDF, y_rand[1])
     for t in 2:n
         @views y_ind[t] = searchsortedfirst(ycdf[:, y_ind[t-1]], y_rand[t])
@@ -48,14 +49,15 @@ function gen_st_y_dist(model; tol::F, max_iter::S) where{F<:Real,S<:Integer}
         mul!(new_dist, get_y(model).Π, old_dist)
 
         d_dist = zero(tol)
-        @tturbo for j in eachindex(new_dist, old_dist)
-            d_dist = max(d_dist, new_dist[j] - old_dist[j])
+        for j in eachindex(new_dist, old_dist)
+            d_dist = max(d_dist, abs(new_dist[j] - old_dist[j]))
         end 
 
-        old_dist, new_dist = new_dist, new_dist
+        old_dist, new_dist = new_dist, old_dist
         i_count += 1
     end
     defl_fac = sum(new_dist)^(-1)
+
     return new_dist * defl_fac
 end
 
@@ -86,7 +88,7 @@ function simulation!(path::Path, shocks::Shocks, model, a; n, trim, trim_def)
     b_ind[1] = zero_idx
     in_def[1] = false
     no_def_duration[1] = 1
-
+    
     state = init_simulation_state(model, shocks.y_ind[1])
     for t in 1:n
         y_ind[t] = shocks.y_ind[t]

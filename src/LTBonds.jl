@@ -18,6 +18,8 @@ using LoopVectorization
 using Distributions
 using FastGaussQuadrature
 
+using Infiltrator
+
 include("types.jl")  # load the types first
 include("types_bonds.jl") 
 include("types_models.jl") 
