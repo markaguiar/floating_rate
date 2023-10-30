@@ -243,6 +243,8 @@ insertcols!(beta_df,2,:rho=>rho)
 rstar = 4 * log(benchmark_parameters.R)
 rho0 = - 4 * log(benchmark_parameters.pref.β)
 
+
+
 plt=plot(beta_df.rho,100*(beta_df.egLT.-1),color=:black,lw=3,legend=false)
 # plot!(beta_df.rho,100*(beta_df.egST.-1),ls=:dash,color=:black,lw=3)
 # plot!(beta_df.rho,100*(beta_df.ckST.-1),ls=:dashdot,color=:green,lw=3)
@@ -258,7 +260,6 @@ merged_xticks = (old_xticks[1][1] ∪ new_xticks[1], old_xticks[1][2] ∪ new_xt
 xticks!(merged_xticks)
 
 SAVE_FIGS && savefig(plt, joinpath(@__DIR__,"..", "output", "welfare_beta.pdf"))
-
 
 plt=plot(gamma_df.Gamma,100*(gamma_df.egLT.-1),color=:black,lw=3,legend=false)
 # plot!(gamma_df.Gamma,100*(gamma_df.egST.-1),ls=:dash,color=:black,lw=3)
@@ -285,8 +286,6 @@ rho2= -4*log.(betaGrid2)
 rho1 = - 4 * log(benchmark_parameters.prefST.β)
 
 insertcols!(norun_beta_df,2,:rho=>rho2)
-
-
 
 @time norun_welfare_beta!(norun_beta_df, models,benchmark_parameters, shocks, paths, betaGrid2)
 @time norun_welfare_gamma!(norun_gamma_df,models, benchmark_parameters, shocks, paths, gammaGrid)
@@ -319,3 +318,14 @@ merged_xticks = (old_xticks[1][1] ∪ new_xticks[1], old_xticks[1][2] ∪ new_xt
 xticks!(merged_xticks)
 
 SAVE_FIGS && savefig(plt, joinpath(@__DIR__, "..","output", "no_run_welfare_gamma.pdf"))
+
+
+sort!(beta_df,[:rho])
+println("rho for EGLT= ", beta_df.rho[findfirst(x->x>=1, beta_df.egLT)])
+sort!(gamma_df,[:Gamma])
+println("gamma for EGLT= ", gamma_df.Gamma[findfirst(x->x<=1, gamma_df.egLT)])
+sort!(norun_beta_df,[:rho])
+println("rho for no run= ", norun_beta_df.rho[findfirst(x->x>=1, norun_beta_df.Lambda)])
+sort!(norun_gamma_df,[:Gamma])
+println("gamma for no run= ", norun_gamma_df.Gamma[findfirst(x->x<=1, norun_gamma_df.Lambda)])
+
