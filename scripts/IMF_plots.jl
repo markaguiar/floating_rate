@@ -128,6 +128,30 @@ function norun_welfare_gamma!(norun_gamma_df, models,benchmark_parameters, shock
     insertcols!(norun_gamma_df, :Lambda=>cons_equiv)
 end 
 
+function do_frontier_simulations!(frontier, thresholds,m, shocks, paths, betaGrid,gammaGrid)
+    simulation!(paths, shocks, m; n = big_T, trim = 1000, trim_def = 20)
+    cons_paths, inc_paths=get_cons_path(paths,m);
+    Threads.@threads for i in eachindex(betaGrid)
+        for j in eachindex(gammaGrid) 
+             frontier[i,j]=compute_value(cons_paths,inc_paths,betaGrid[i],gammaGrid[j])
+        end
+        thresholds[i]=findmin(x->abs(x-1),frontier[i,:])[2]
+    end
+end 
+
+function norun_do_frontier_simulations!(frontier, thresholds,models, shocks, paths, betaGrid,gammaGrid)
+    simulation!(paths, shocks, models.ckST; n = big_T, trim = 1000, trim_def = 20)
+    cons_pathsCK=deepcopy(get_cons_path(paths,models.ckST)[1]);
+    simulation!(paths, shocks, models.egST; n = big_T, trim = 1000, trim_def = 20)
+    cons_pathsEG=deepcopy(get_cons_path(paths,models.egST)[1]);
+    Threads.@threads for i in eachindex(betaGrid)
+        for j in eachindex(gammaGrid) 
+             frontier[i,j]=compute_value(cons_pathsEG,cons_pathsCK,betaGrid[i],gammaGrid[j])
+        end
+        thresholds[i]=findmin(x->abs(x-1),frontier[i,:])[2]
+    end
+end 
+
 
 benchmark_parameters =  let
     R = 1.01
@@ -341,6 +365,45 @@ annotate!(norun_gamma_threshold, -.5, text(L"\gamma^\ast\approx"*"18",:gray,:rig
 
 
 SAVE_FIGS && savefig(plt, joinpath(@__DIR__, "..","output", "no_run_welfare_gamma.pdf"))
+
+
+
+#frontier 
+
+betaGrid_coarse=LinRange(0.95,0.975,20)
+gammaGrid_coarse=LinRange(0.5,15,20)
+
+frontier = Array{Float64}(undef,length(betaGrid_coarse),length(gammaGrid_coarse))   
+thresh= Array{Int64}(undef,length(betaGrid_coarse))
+@time do_frontier_simulations!(frontier, thresh,models.egLT, shocks, paths, betaGrid_coarse,gammaGrid_coarse)
+
+
+betaGrid_coarse2=LinRange(0.95,0.99,20)
+gammaGrid_coarse2=LinRange(0.5,10,20)
+norun_frontier = Array{Float64}(undef,length(betaGrid_coarse),length(gammaGrid_coarse)) 
+norun_thresh= Array{Int64}(undef,length(betaGrid_coarse))
+@time norun_do_frontier_simulations!(norun_frontier, norun_thresh,models, shocks, paths, betaGrid_coarse2,gammaGrid_coarse2)
+
+
+plt=plot(-4*log.(betaGrid_coarse),[gammaGrid_coarse[i] for i in thresh],color=:black,lw=3,legend=false;fill=(0,:grey80,0.5))
+plot!(-4*log.(betaGrid_coarse),[gammaGrid_coarse[i] for i in thresh],color=:black,lw=3,legend=false;fill=(15,:red,0.5))
+xlabel!("Household Discount Rate: " * L"\rho")
+ylabel!("Household Risk Aversion: " * L"\gamma")
+annotate!(-4*log(benchmark_parameters.pref.β),benchmark_parameters.γ, text(L"\cdot",50))
+annotate!(0.12,10, text("Prefers Autarky",14,))
+annotate!(0.16,4, text("Prefers Debt",14,))
+
+SAVE_FIGS && savefig(plt, joinpath(@__DIR__, "..","output", "frontier_egLT.pdf"))
+
+plt=plot(-4*log.(betaGrid_coarse2),[gammaGrid_coarse2[i] for i in norun_thresh],color=:black,lw=3,legend=false;fill=(0,:grey80,0.5))
+plot!(-4*log.(betaGrid_coarse2),[gammaGrid_coarse2[i] for i in norun_thresh],color=:black,lw=3,legend=false;fill=(10,:red,0.5))
+xlabel!("Household Discount Rate: " * L"\rho")
+ylabel!("Household Risk Aversion: " * L"\gamma")
+annotate!(0.08,5, text("Prefers Runs",14,))
+annotate!(0.16,3, text("Prefers LoLR",14,))
+
+SAVE_FIGS && savefig(plt, joinpath(@__DIR__, "..","output", "norun_frontier.pdf"))
+
 
 
 
