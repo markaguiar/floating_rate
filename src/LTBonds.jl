@@ -20,6 +20,9 @@ using FastGaussQuadrature
 
 using Infiltrator
 
+using ThreadsX
+using DataFrames
+
 include("types.jl")  # load the types first
 include("types_bonds.jl") 
 include("types_models.jl") 
@@ -106,17 +109,17 @@ export
     simulation, 
     simulation!,
     moments,
-    create_shocks_paths
+    create_shocks_paths,
 
 # IMF functions
-    u
-    get_cons_path
-    compute_value
-    do_beta_simulations!
-    do_gamma_simulations!
-    norun_welfare_beta!
-    norun_welfare_gamma!
-    do_frontier_simulations!
+    u,
+    get_cons_path,
+    compute_value,
+    do_beta_simulations!,
+    do_gamma_simulations!,
+    norun_welfare_beta!,
+    norun_welfare_gamma!,
+    do_frontier_simulations!,
     norun_do_frontier_simulations!
 
 end

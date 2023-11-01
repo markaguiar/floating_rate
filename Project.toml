@@ -4,6 +4,7 @@ authors = ["markaguiar <aguiar@hotmail.com>"]
 version = "0.1.0"
 
 [deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
 Infiltrator = "5903a43b-9cc3-4c30-8d17-598619ec4e9b"

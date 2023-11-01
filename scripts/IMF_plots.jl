@@ -150,32 +150,30 @@ thresh= Array{Int64}(undef,length(betaGrid_coarse))
 norun_betaGrid=LinRange(0.8,0.999,50)
 norun_gammaGrid=LinRange(0.5,20,50)
 
-norun_beta_df=DataFrame("Beta"=>betaGrid2)
-rho2= -4*log.(betaGrid2)
+norun_beta_df=DataFrame("Beta"=>norun_betaGrid)
+rho2= -4*log.(norun_betaGrid)
 insertcols!(norun_beta_df,2,:rho=>rho2)
-norun_gamma_df=DataFrame("Gamma"=>gammaGrid);
+norun_gamma_df=DataFrame("Gamma"=>norun_gammaGrid);
 
 
 @time norun_welfare_beta!(norun_beta_df, models,benchmark_parameters, shocks, paths, norun_betaGrid)
 sort!(norun_beta_df,[:rho])
 norun_rho_threshold=norun_beta_df.rho[findfirst(x->x>=1, norun_beta_df.Lambda)]
-println("rho for no run= ", norun_rho_threshold)@time norun_welfare_gamma!(norun_gamma_df,models, benchmark_parameters, shocks, paths, gammaGrid)
+println("rho for no run= ", norun_rho_threshold)
 
-@time norun_welfare_gamma!(norun_beta_df, models,benchmark_parameters, shocks, paths, norun_gammaGrid)
+@time norun_welfare_gamma!(norun_gamma_df, models,benchmark_parameters, shocks, paths, norun_gammaGrid)
 sort!(norun_gamma_df,[:Gamma])
 norun_gamma_threshold=norun_gamma_df.Gamma[findfirst(x->x<=1, norun_gamma_df.Lambda)]
 println("gamma for no run= ", norun_gamma_threshold)
 
 
-
 #frontier grids for LoLR comparisons
 norun_betaGrid_coarse=LinRange(0.95,0.99,20)
-norun_gammaGrid_coarse=LinRange(0.5,10,20)
+norun_gammaGrid_coarse=LinRange(0.5,10,50)
 norun_frontier = Array{Float64}(undef,length(norun_betaGrid_coarse),length(norun_gammaGrid_coarse)) 
 norun_thresh= Array{Int64}(undef,length(norun_betaGrid_coarse))
 
 @time norun_do_frontier_simulations!(norun_frontier, norun_thresh,models, shocks, paths, norun_betaGrid_coarse,norun_gammaGrid_coarse)
-
 
 
 # Plots
@@ -205,12 +203,13 @@ ylims!(-2,4)
 yticks!([-2, -1, 0, 1, 2, 3, 4],["-2%","-1%","0","1%","2%","3%","4%"])
 xlabel!("Household Discount Rate: " * L"\rho")
 hline!([0],color=:black, lw=1)
-vline!([rstar,rho_threshold,rho0],color=:LightGray,lw=3)
+vline!([rstar,rho1],color=:LightGray,lw=3)
 old_xticks = xticks(plt) # grab xticks
-new_xticks = ([rstar, rho0], [L"r^\star",L"\rho^G"])
+new_xticks = ([rstar, rho1], [L"r^\star",L"\rho^G"])
 merged_xticks = (old_xticks[1][1] ∪ new_xticks[1], old_xticks[1][2] ∪ new_xticks[2])
 xticks!(merged_xticks)
-annotate!(rho_threshold+.005, -1.5, text(L"\rho^\ast\approx"*"11%",:gray,:left,11))
+annotate!(0.21, 1.5, text("LoLR",:black,:left,11))
+annotate!(0.21, 0.65, text("Runs",:blue,:left,11))
 
 SAVE_FIGS && savefig(plt, joinpath(@__DIR__,"..", "output", "welfare_beta_ST.pdf"))
 
@@ -241,12 +240,13 @@ ylims!(-2,2)
 yticks!([-2, -1, 0, 1, 2],["-2%","-1%","0","1%","2%"])
 xlabel!("Household Risk Aversion: " * L"\gamma")
 hline!([0],color=:black, lw=1)
-vline!([benchmark_parameters.γ,gamma_threshold],color=:LightGray,lw=3)
+vline!([benchmark_parameters.γ],color=:LightGray,lw=3)
 old_xticks = xticks(plt) # grab xticks
 new_xticks = ([benchmark_parameters.γ], [L"γ^G"])
 merged_xticks = (old_xticks[1][1] ∪ new_xticks[1], old_xticks[1][2] ∪ new_xticks[2])
 xticks!(merged_xticks)
-annotate!(gamma_threshold+.005, -1.5, text(L"\gamma^\ast\approx"*"13",:gray,:left,11))
+annotate!(3, 1, text("LoLR",:black,:left,11))
+annotate!(15, -0.5, text("Runs",:blue,:left,11))
 
 SAVE_FIGS && savefig(plt, joinpath(@__DIR__, "..","output", "welfare_gamma_ST.pdf"))
 
@@ -295,8 +295,8 @@ annotate!(0.16,4, text("Prefers Debt",14,))
 SAVE_FIGS && savefig(plt, joinpath(@__DIR__, "..","output", "frontier_egLT.pdf"))
 
 #LoLR: Frontier
-plt=plot(-4*log.(betaGrid_coarse2),[gammaGrid_coarse2[i] for i in norun_thresh],color=:black,lw=3,legend=false;fill=(0,:grey80,0.5))
-plot!(-4*log.(betaGrid_coarse2),[gammaGrid_coarse2[i] for i in norun_thresh],color=:black,lw=3,legend=false;fill=(10,:red,0.5))
+plt=plot(-4*log.(norun_betaGrid_coarse),[norun_gammaGrid_coarse[i] for i in norun_thresh],color=:black,lw=3,legend=false;fill=(0,:grey80,0.5))
+plot!(-4*log.(norun_betaGrid_coarse),[norun_gammaGrid_coarse[i] for i in norun_thresh],color=:black,lw=3,legend=false;fill=(10,:red,0.5))
 xlabel!("Household Discount Rate: " * L"\rho")
 ylabel!("Household Risk Aversion: " * L"\gamma")
 annotate!(0.08,5, text("Prefers Runs",14,))

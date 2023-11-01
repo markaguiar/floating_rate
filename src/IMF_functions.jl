@@ -12,8 +12,8 @@ end
 #after the debt model is solved and simulated, the simulation is stored in "paths"
 #get sequences of consumption and income from "paths"
 function get_cons_path(paths::Vector, m)
-    cons_path=map((j)->paths[j].c, collect(1:big_N))
-    inc_path=map((j)->get_y_grid(m)[paths[j].y_ind], collect(1:big_N))
+    cons_path=map((j)->paths[j].c, collect(1:size(paths)[1]))
+    inc_path=map((j)->get_y_grid(m)[paths[j].y_ind], collect(1:size(paths)[1]))
     return cons_path, inc_path
 end;
 
@@ -46,7 +46,7 @@ function do_beta_simulations!(beta_df, models, benchmark_parameters, shocks, pat
     for j in eachindex(models)
         m=models[j]
         gamma0=benchmark_parameters.γ
-        simulation!(paths, shocks, m; n = big_T, trim = 1000, trim_def = 20)
+        simulation!(paths, shocks, m; n = size(paths[1].c)[1], trim = 1000, trim_def = 20)
         cons_paths, inc_paths=get_cons_path(paths,m);
         cons_equiv = ThreadsX.map(beta->compute_value(cons_paths,inc_paths,beta,gamma0), betaGrid)
         insertcols!(beta_df, j=>cons_equiv)
@@ -58,7 +58,7 @@ function do_gamma_simulations!(gamma_df, models, benchmark_parameters, shocks, p
     for j in eachindex(models)
         m=models[j]
         beta0= benchmark_parameters.pref.β #1/benchmark_parameters.R 
-        simulation!(paths, shocks, m; n = big_T, trim = 1000, trim_def = 20)
+        simulation!(paths, shocks, m; n =  size(paths[1].c)[1], trim = 1000, trim_def = 20)
         cons_paths, inc_paths=get_cons_path(paths,m);
         cons_equiv= ThreadsX.map(gamma->compute_value(cons_paths,inc_paths,beta0,gamma), gammaGrid)
         insertcols!(gamma_df, j=>cons_equiv)
@@ -68,9 +68,9 @@ end
 #do welfare comparison of LoLR vs Runs for different discount factors
 function norun_welfare_beta!(norun_beta_df, models,benchmark_parameters, shocks, paths, betaGrid)
     gamma0=benchmark_parameters.γ
-    simulation!(paths, shocks, models.ckST; n = big_T, trim = 1000, trim_def = 20)
+    simulation!(paths, shocks, models.ckST; n =  size(paths[1].c)[1], trim = 1000, trim_def = 20)
     cons_pathsCK=deepcopy(get_cons_path(paths,models.ckST)[1]);
-    simulation!(paths, shocks, models.egST; n = big_T, trim = 1000, trim_def = 20)
+    simulation!(paths, shocks, models.egST; n =  size(paths[1].c)[1], trim = 1000, trim_def = 20)
     cons_pathsEG=deepcopy(get_cons_path(paths,models.egST)[1]);
     cons_equiv = ThreadsX.map(beta->compute_value(cons_pathsEG,cons_pathsCK,beta,gamma0), betaGrid)
     insertcols!(norun_beta_df, :Lambda=>cons_equiv)
@@ -79,9 +79,9 @@ end
 #do welfare comparison of LoLR vs Runs for different risk aversions
 function norun_welfare_gamma!(norun_gamma_df, models,benchmark_parameters, shocks, paths, gammaGrid)
     beta0= benchmark_parameters.prefST.β
-    simulation!(paths, shocks, models.egST; n = big_T, trim = 1000, trim_def = 20)
+    simulation!(paths, shocks, models.egST; n =  size(paths[1].c)[1], trim = 1000, trim_def = 20)
     cons_pathsEG=deepcopy(get_cons_path(paths,models.egST)[1]);
-    simulation!(paths, shocks, models.ckST; n = big_T, trim = 1000, trim_def = 20)
+    simulation!(paths, shocks, models.ckST; n =  size(paths[1].c)[1], trim = 1000, trim_def = 20)
     cons_pathsCK=deepcopy(get_cons_path(paths,models.ckST)[1]);
     cons_equiv = ThreadsX.map(gamma->compute_value(cons_pathsEG,cons_pathsCK,beta0,gamma), gammaGrid)
     insertcols!(norun_gamma_df, :Lambda=>cons_equiv)
@@ -89,7 +89,7 @@ end
 
 #for each discount factor in betaGrid, find risk aversion in gammaGrid that makes private agents indifferent to autarky
 function do_frontier_simulations!(frontier, thresholds,m, shocks, paths, betaGrid,gammaGrid)
-    simulation!(paths, shocks, m; n = big_T, trim = 1000, trim_def = 20)
+    simulation!(paths, shocks, m; n =  size(paths[1].c)[1], trim = 1000, trim_def = 20)
     cons_paths, inc_paths=get_cons_path(paths,m);
     Threads.@threads for i in eachindex(betaGrid)
         for j in eachindex(gammaGrid) 
@@ -101,9 +101,9 @@ end
 
 #for each discount factor in betaGrid, find risk aversion in gammaGrid that makes private agents indifferent to LoLR
 function norun_do_frontier_simulations!(frontier, thresholds,models, shocks, paths, betaGrid,gammaGrid)
-    simulation!(paths, shocks, models.ckST; n = big_T, trim = 1000, trim_def = 20)
+    simulation!(paths, shocks, models.ckST; n = size(paths[1].c)[1], trim = 1000, trim_def = 20)
     cons_pathsCK=deepcopy(get_cons_path(paths,models.ckST)[1]);
-    simulation!(paths, shocks, models.egST; n = big_T, trim = 1000, trim_def = 20)
+    simulation!(paths, shocks, models.egST; n =  size(paths[1].c)[1], trim = 1000, trim_def = 20)
     cons_pathsEG=deepcopy(get_cons_path(paths,models.egST)[1]);
     Threads.@threads for i in eachindex(betaGrid)
         for j in eachindex(gammaGrid) 
