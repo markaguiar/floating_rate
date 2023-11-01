@@ -129,17 +129,20 @@ gamma_df=DataFrame("Gamma"=>gammaGrid)
 
 @time do_beta_simulations!(beta_df, models, benchmark_parameters, shocks, paths, betaGrid)
 sort!(beta_df,[:rho])
-rho_threshold=beta_df.rho[findfirst(x->x>=1, beta_df.egLT)]
+rho_threshold=beta_df.rho[findmin(x->abs(x-1), beta_df.egLT)[2]]
 println("rho for EGLT= ", rho_threshold)
+println("rho for ST= ", beta_df.rho[findmin([abs(x-y) for (x,y) in zip(beta_df.egST,beta_df.ckST)])[2]])
+
 @time do_gamma_simulations!(gamma_df, models, benchmark_parameters, shocks, paths, gammaGrid)
 sort!(gamma_df,[:Gamma])
-gamma_threshold =gamma_df.Gamma[findfirst(x->x<=1, gamma_df.egLT)]
+gamma_threshold =gamma_df.Gamma[findmin(x->abs(x-1), gamma_df.egLT)[2]]
 println("gamma for EGLT= ", gamma_threshold)
+println("gamma for ST= ", gamma_df.Gamma[findmin([abs(x-y) for (x,y) in zip(gamma_df.egST,gamma_df.ckST)])[2]])
 
 
 #frontier grids for autarky comparisons
 betaGrid_coarse=LinRange(0.95,0.975,20)
-gammaGrid_coarse=LinRange(0.5,15,20)
+gammaGrid_coarse=LinRange(0.5,15,50)
 frontier = Array{Float64}(undef,length(betaGrid_coarse),length(gammaGrid_coarse))   
 thresh= Array{Int64}(undef,length(betaGrid_coarse))
 
@@ -158,12 +161,12 @@ norun_gamma_df=DataFrame("Gamma"=>norun_gammaGrid);
 
 @time norun_welfare_beta!(norun_beta_df, models,benchmark_parameters, shocks, paths, norun_betaGrid)
 sort!(norun_beta_df,[:rho])
-norun_rho_threshold=norun_beta_df.rho[findfirst(x->x>=1, norun_beta_df.Lambda)]
+norun_rho_threshold=norun_beta_df.rho[findmin(x->abs(x-1), norun_beta_df.Lambda)[2]]
 println("rho for no run= ", norun_rho_threshold)
 
 @time norun_welfare_gamma!(norun_gamma_df, models,benchmark_parameters, shocks, paths, norun_gammaGrid)
 sort!(norun_gamma_df,[:Gamma])
-norun_gamma_threshold=norun_gamma_df.Gamma[findfirst(x->x<=1, norun_gamma_df.Lambda)]
+norun_gamma_threshold=norun_gamma_df.Gamma[findmin(x->abs(x-1), norun_gamma_df.Lambda)[2]]
 println("gamma for no run= ", norun_gamma_threshold)
 
 
@@ -179,11 +182,9 @@ norun_thresh= Array{Int64}(undef,length(norun_betaGrid_coarse))
 # Plots
 #EG LT vs Autarky: Beta
 plt=plot(beta_df.rho,100*(beta_df.egLT.-1),color=:black,lw=3,legend=false)
-plot!(beta_df.rho,100*(beta_df.egST.-1),ls=:dash,color=:black,lw=3)
-plot!(beta_df.rho,100*(beta_df.ckST.-1),ls=:dashdot,color=:green,lw=3)
 xlims!(0.0,0.25)
-ylims!(-2,4)
-yticks!([-2, -1, 0, 1, 2, 3, 4],["-2%","-1%","0","1%","2%","3%","4%"])
+ylims!(-2,2)
+yticks!([-2, -1, 0, 1, 2],["-2%","-1%","0","1%","2%"])
 xlabel!("Household Discount Rate: " * L"\rho")
 hline!([0],color=:black, lw=1)
 vline!([rstar,rho_threshold,rho0],color=:LightGray,lw=3)
@@ -199,8 +200,8 @@ SAVE_FIGS && savefig(plt, joinpath(@__DIR__,"..", "output", "welfare_beta.pdf"))
 plt=plot(beta_df.rho,100*(beta_df.egST.-1),color=:black,lw=3,legend=false)
 plot!(beta_df.rho,100*(beta_df.ckST.-1),ls=:dash,color=:blue,lw=3)
 xlims!(0.0,0.25)
-ylims!(-2,4)
-yticks!([-2, -1, 0, 1, 2, 3, 4],["-2%","-1%","0","1%","2%","3%","4%"])
+ylims!(-2,2)
+yticks!([-2, -1, 0, 1, 2],["-2%","-1%","0","1%","2%"])
 xlabel!("Household Discount Rate: " * L"\rho")
 hline!([0],color=:black, lw=1)
 vline!([rstar,rho1],color=:LightGray,lw=3)
@@ -236,8 +237,8 @@ SAVE_FIGS && savefig(plt, joinpath(@__DIR__, "..","output", "welfare_gamma.pdf")
 plt=plot(gamma_df.Gamma,100*(gamma_df.egST.-1),color=:black,lw=3,legend=false)
 plot!(gamma_df.Gamma,100*(gamma_df.ckST.-1),ls=:dash,color=:blue,lw=3)
 xlims!(0.4,20)
-ylims!(-2,2)
-yticks!([-2, -1, 0, 1, 2],["-2%","-1%","0","1%","2%"])
+ylims!(0,8)
+yticks!([0, 2, 4, 6, 8],["0","2%","4%","6%","8%"])
 xlabel!("Household Risk Aversion: " * L"\gamma")
 hline!([0],color=:black, lw=1)
 vline!([benchmark_parameters.γ],color=:LightGray,lw=3)
@@ -245,8 +246,8 @@ old_xticks = xticks(plt) # grab xticks
 new_xticks = ([benchmark_parameters.γ], [L"γ^G"])
 merged_xticks = (old_xticks[1][1] ∪ new_xticks[1], old_xticks[1][2] ∪ new_xticks[2])
 xticks!(merged_xticks)
-annotate!(3, 1, text("LoLR",:black,:left,11))
-annotate!(15, -0.5, text("Runs",:blue,:left,11))
+annotate!(5, 5.3, text("LoLR",:black,:left,11))
+annotate!(5, 1.8, text("Runs",:blue,:left,11))
 
 SAVE_FIGS && savefig(plt, joinpath(@__DIR__, "..","output", "welfare_gamma_ST.pdf"))
 

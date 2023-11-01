@@ -57,7 +57,8 @@ end
 function do_gamma_simulations!(gamma_df, models, benchmark_parameters, shocks, paths, gammaGrid)
     for j in eachindex(models)
         m=models[j]
-        beta0= benchmark_parameters.pref.β #1/benchmark_parameters.R 
+        beta0=get_preferences(models[j]).β
+        #beta0= benchmark_parameters.pref.β 
         simulation!(paths, shocks, m; n =  size(paths[1].c)[1], trim = 1000, trim_def = 20)
         cons_paths, inc_paths=get_cons_path(paths,m);
         cons_equiv= ThreadsX.map(gamma->compute_value(cons_paths,inc_paths,beta0,gamma), gammaGrid)
