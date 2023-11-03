@@ -290,8 +290,13 @@ plot!(-4*log.(betaGrid_coarse),[gammaGrid_coarse[i] for i in thresh],color=:blac
 xlabel!("Household Discount Rate: " * L"\rho")
 ylabel!("Household Risk Aversion: " * L"\gamma")
 annotate!(-4*log(benchmark_parameters.pref.β),benchmark_parameters.γ, text(L"\cdot",50))
+annotate!(-4*log(benchmark_parameters.pref.β)+.002,benchmark_parameters.γ+.25, text("G",14))
 annotate!(0.12,10, text("Prefers Autarky",14,))
 annotate!(0.16,4, text("Prefers Debt",14,))
+annotate!(0.108,4.25, text(L"\cdot",50,))
+annotate!(0.11,4.5, text("B",14,))
+annotate!(0.12,2.5, text(L"\cdot",50,))
+annotate!(0.122,2.75, text("A",14,))
 
 SAVE_FIGS && savefig(plt, joinpath(@__DIR__, "..","output", "frontier_egLT.pdf"))
 
